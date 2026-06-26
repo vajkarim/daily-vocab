@@ -1,0 +1,23 @@
+name: daily-vocab-mail
+
+on:
+  schedule:
+    - cron: '0 21 * * *'      # 06:00 JST（UTC 21:00）
+  workflow_dispatch: {}        # 手動実行用
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Send daily vocab email
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+          PAGES_URL: ${{ vars.PAGES_URL }}
+          START_DATE: ${{ vars.START_DATE }}
+        run: python send_email.py

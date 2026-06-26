@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>今日の20語</title>
+<style>
+:root{
+  --bg:#faf6ee; --paper:#ffffff; --ink:#1f2a24; --sub:#6b7a70;
+  --line:#e3dccb; --accent:#b3502f; --accent2:#2f6e62; --gold:#c79a3a;
+  --ok:#2f6e62; --okbg:#e3efe9; --r:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; padding-bottom:80px;}
+.deva{font-family:"Noto Sans Devanagari","Mangal","Nirmala UI",sans-serif;}
+.zh{font-family:"Noto Sans SC","Microsoft YaHei","PingFang SC",sans-serif;}
+header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 14px;}
+.daynav{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.daynav button{border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  border-radius:20px;padding:6px 14px;font-size:.9rem;cursor:pointer;}
+.daytitle{font-weight:800;font-size:1.05rem;}
+.theme{color:var(--accent);font-size:.8rem;margin-top:2px;text-align:center;}
+.prog{font-size:.78rem;color:var(--sub);text-align:center;margin-top:4px;}
+.prog b{color:var(--ink);}
+.tabs{display:flex;gap:6px;margin-top:10px;}
+.tabs button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--sub);
+  border-radius:20px;padding:8px;font-size:.85rem;font-weight:700;cursor:pointer;}
+.tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+main{padding:12px 14px 40px;}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px;margin-bottom:10px;}
+.card.done{background:var(--okbg);}
+.cardtop{display:flex;align-items:center;gap:8px;}
+.en{font-weight:800;font-size:1.15rem;flex:1;}
+.badge{font-size:.62rem;padding:2px 6px;border-radius:5px;background:#ece6f1;color:#6a4f8a;font-weight:700;}
+.lv5{background:#e3efe9;color:var(--ok);} .lv4{background:#f3e4d4;color:var(--accent);}
+.iconbtn{border:none;background:transparent;font-size:1.25rem;cursor:pointer;line-height:1;padding:4px;}
+.chk{width:24px;height:24px;accent-color:var(--accent2);}
+.langs{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;}
+.lrow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:.95rem;}
+.llab{font-size:.62rem;color:var(--sub);width:64px;flex-shrink:0;}
+.lword{flex:1;}
+.lread{color:var(--sub);font-size:.78rem;margin-left:4px;}
+.spk{border:none;background:transparent;font-size:1rem;cursor:pointer;padding:2px 6px;color:var(--accent2);}
+.story-lang{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:10px;}
+.story-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.story-head b{font-size:.85rem;}
+.story-body{font-size:1.02rem;line-height:1.7;}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:20px;
+  padding:10px 16px;font-size:.9rem;cursor:pointer;}
+.btn.primary{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+.footer-act{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);
+  padding:10px 14px;display:flex;gap:8px;justify-content:center;}
+.quiz-q{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px;text-align:center;margin-bottom:12px;}
+.quiz-word{font-size:1.6rem;font-weight:800;margin:6px 0;}
+.quiz-opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--paper);
+  border-radius:10px;padding:12px;margin-bottom:8px;font-size:1rem;cursor:pointer;}
+.quiz-opt.correct{background:var(--okbg);border-color:var(--ok);}
+.quiz-opt.wrong{background:#f7e3df;border-color:var(--accent);}
+.quiz-score{text-align:center;color:var(--sub);font-size:.85rem;margin-bottom:8px;}
+.hidden{display:none;}
+.msg{text-align:center;color:var(--sub);padding:30px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="daynav">
+    <button id="prevBtn">‹ 前日</button>
+    <div style="text-align:center;">
+      <div class="daytitle" id="dayTitle">Day -</div>
+      <div class="theme" id="themeLabel"></div>
+    </div>
+    <button id="nextBtn">翌日 ›</button>
+  </div>
+  <div class="prog" id="prog"></div>
+  <div class="tabs">
+    <button data-tab="words" class="active">単語</button>
+    <button data-tab="story">物語</button>
+    <button data-tab="quiz">クイズ</button>
+  </div>
+</header>
+<main>
+  <div id="words"></div>
+  <div id="story" class="hidden"></div>
+  <div id="quiz" class="hidden"></div>
+</main>
+<div class="footer-act">
+  <button class="btn" id="ttsAll">🔊 物語を再生</button>
+  <button class="btn primary" id="ankiExport">⭐ 苦手をAnkiへ</button>
+</div>
+
+<script>
+const LANGS = [
+  {key:'en', label:'English', tts:'en-US'},
+  {key:'ja', label:'日本語',  tts:'ja-JP'},
+  {key:'hi', label:'हिन्दी',  tts:'hi-IN', cls:'deva'},
+  {key:'zh', label:'中文',    tts:'zh-CN', cls:'zh', r:'zh_r'},
+  {key:'ne', label:'नेपाली',  tts:'ne-NP', cls:'deva', r:'ne_r'},
+  {key:'idn',label:'Bahasa',  tts:'id-ID'},
+  {key:'vi', label:'Tiếng Việt', tts:'vi-VN'},
+];
+const PKEY = 'daily20_progress_v1';
+let prog = {}; try{ prog = JSON.parse(localStorage.getItem(PKEY))||{}; }catch(e){}
+if(!prog.checked) prog.checked={}; if(!prog.flagged) prog.flagged={};
+function save(){ try{ localStorage.setItem(PKEY, JSON.stringify(prog)); }catch(e){} }
+
+let VOCAB={}, SCHED={}, PARAS={}, day=1, words=[];
+
+function qs(n){ const m=new URLSearchParams(location.search); return m.get(n); }
+function speak(text, lang){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; speechSynthesis.speak(u);
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function load(){
+  [VOCAB,SCHED,PARAS] = await Promise.all([
+    fetch('vocab.json').then(r=>r.json()),
+    fetch('schedule.json').then(r=>r.json()),
+    fetch('paragraphs.json').then(r=>r.json()).catch(()=>({})),
+  ]);
+  day = Math.min(Math.max(parseInt(qs('day'))||1,1), SCHED.day_count);
+  render();
+}
+function setDay(d){
+  day = Math.min(Math.max(d,1), SCHED.day_count);
+  history.replaceState(null,'','?day='+day);
+  render();
+}
+function render(){
+  words = (SCHED.days[String(day)]||[]).map(id=>({id, ...VOCAB[String(id)]}));
+  document.getElementById('dayTitle').textContent = 'Day '+day+' / '+SCHED.day_count;
+  const p = PARAS[String(day)];
+  document.getElementById('themeLabel').textContent = p? p.theme : '';
+  renderWords(); renderStory(); renderQuiz(); updateProg();
+}
+function updateProg(){
+  const done = words.filter(w=>prog.checked[w.id]).length;
+  document.getElementById('prog').innerHTML = `今日のチェック <b>${done}</b> / ${words.length}　｜　⭐苦手 ${words.filter(w=>prog.flagged[w.id]).length}`;
+}
+function renderWords(){
+  const c=document.getElementById('words'); c.innerHTML='';
+  words.forEach(w=>{
+    const div=document.createElement('div');
+    div.className='card'+(prog.checked[w.id]?' done':'');
+    let h=`<div class="cardtop">
+      <span class="en">${esc(w.en)}</span>
+      <span class="badge ${w.level==='5級'?'lv5':'lv4'}">${w.level}</span>
+      <span class="badge">${w.pos}</span>
+      <button class="iconbtn flag" title="苦手">${prog.flagged[w.id]?'⭐':'☆'}</button>
+      <input type="checkbox" class="chk" ${prog.checked[w.id]?'checked':''}>
+    </div><div class="langs">`;
+    LANGS.forEach(l=>{
+      if(l.key==='en') return;
+      const word=esc(w[l.key]||''); const read=l.r?esc(w[l.r]||''):'';
+      h+=`<div class="lrow">
+        <span class="llab">${l.label}</span>
+        <span class="lword ${l.cls||''}">${word}${read?`<span class="lread">${read}</span>`:''}</span>
+        <button class="spk" data-tts="${l.tts}" data-text="${word}">🔊</button>
+      </div>`;
+    });
+    h+='</div>';
+    div.innerHTML=h;
+    div.querySelector('.chk').addEventListener('change',e=>{ prog.checked[w.id]=e.target.checked; save(); div.classList.toggle('done',e.target.checked); updateProg();});
+    div.querySelector('.flag').addEventListener('click',e=>{ prog.flagged[w.id]=!prog.flagged[w.id]; save(); e.target.textContent=prog.flagged[w.id]?'⭐':'☆'; updateProg();});
+    div.querySelectorAll('.spk').forEach(b=>b.addEventListener('click',()=>speak(b.dataset.text,b.dataset.tts)));
+    // tap English to hear
+    const enEl=div.querySelector('.en'); enEl.style.cursor='pointer';
+    enEl.addEventListener('click',()=>speak(w.en,'en-US'));
+    c.appendChild(div);
+  });
+}
+function renderStory(){
+  const c=document.getElementById('story'); const p=PARAS[String(day)];
+  if(!p){ c.innerHTML='<div class="msg">この日の物語はまだ準備中です。</div>'; return; }
+  c.innerHTML='';
+  LANGS.forEach(l=>{
+    const txt=p[l.key]; if(!txt) return;
+    const d=document.createElement('div'); d.className='story-lang';
+    d.innerHTML=`<div class="story-head"><b>${l.label}</b><button class="spk" data-tts="${l.tts}">🔊 再生</button></div>
+      <div class="story-body ${l.cls||''}">${esc(txt)}</div>`;
+    d.querySelector('.spk').addEventListener('click',()=>speak(txt,l.tts));
+    c.appendChild(d);
+  });
+}
+// ---- Quiz ----
+let quizState=null;
+function renderQuiz(){
+  const c=document.getElementById('quiz');
+  c.innerHTML=`<div class="quiz-score" id="qscore"></div><div id="qbody"></div>`;
+  quizState={i:0,correct:0,order:shuffle([...words])};
+  nextQuiz();
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function nextQuiz(){
+  const body=document.getElementById('qbody'); const sc=document.getElementById('qscore');
+  if(!quizState.order.length){ body.innerHTML='<div class="msg">今日の単語がありません。</div>'; return; }
+  if(quizState.i>=quizState.order.length){
+    body.innerHTML=`<div class="quiz-q"><div>クイズ終了！</div><div class="quiz-word">${quizState.correct} / ${quizState.order.length}</div><button class="btn primary" id="qagain">もう一回</button></div>`;
+    document.getElementById('qagain').addEventListener('click',renderQuiz); sc.textContent=''; return;
+  }
+  sc.textContent=`第 ${quizState.i+1} 問 / ${quizState.order.length}　正解 ${quizState.correct}`;
+  const w=quizState.order[quizState.i];
+  // prompt = English word (+TTS); options = Japanese meanings
+  const wrong=shuffle(words.filter(x=>x.id!==w.id)).slice(0,3);
+  const opts=shuffle([w,...wrong]);
+  let h=`<div class="quiz-q"><div style="font-size:.8rem;color:var(--sub)">意味は？</div>
+    <div class="quiz-word">${esc(w.en)} <button class="spk" data-tts="en-US">🔊</button></div></div>`;
+  opts.forEach(o=>{ h+=`<button class="quiz-opt" data-id="${o.id}">${esc(o.ja)}</button>`; });
+  body.innerHTML=h;
+  body.querySelector('.spk').addEventListener('click',()=>speak(w.en,'en-US'));
+  body.querySelectorAll('.quiz-opt').forEach(b=>b.addEventListener('click',()=>{
+    const ok = String(b.dataset.id)===String(w.id);
+    if(ok){ b.classList.add('correct'); quizState.correct++; }
+    else { b.classList.add('wrong'); body.querySelector(`[data-id="${w.id}"]`).classList.add('correct'); }
+    body.querySelectorAll('.quiz-opt').forEach(x=>x.disabled=true);
+    setTimeout(()=>{ quizState.i++; nextQuiz(); }, 900);
+  }));
+}
+// ---- tabs ----
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  ['words','story','quiz'].forEach(t=>document.getElementById(t).classList.toggle('hidden',t!==b.dataset.tab));
+}));
+document.getElementById('prevBtn').addEventListener('click',()=>setDay(day-1));
+document.getElementById('nextBtn').addEventListener('click',()=>setDay(day+1));
+document.getElementById('ttsAll').addEventListener('click',()=>{
+  const p=PARAS[String(day)]; if(p&&p.ja) speak(p.ja,'ja-JP');
+});
+document.getElementById('ankiExport').addEventListener('click',()=>{
+  const flagged=Object.keys(prog.flagged).filter(id=>prog.flagged[id]);
+  if(!flagged.length){ alert('苦手フラグ（⭐）を付けた単語がありません。'); return; }
+  let tsv='#separator:tab\n#html:false\n#columns:English\tJapanese\tHindi\tChinese\tNepali\tBahasa\tVietnamese\n';
+  flagged.forEach(id=>{ const v=VOCAB[id]; if(!v) return;
+    tsv+=[v.en,v.ja,v.hi,v.zh,v.ne,v.idn,v.vi].join('\t')+'\n'; });
+  const blob=new Blob([tsv],{type:'text/tab-separated-values'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='苦手単語_anki.tsv'; a.click();
+});
+load();
+</script>
+</body>
+</html>

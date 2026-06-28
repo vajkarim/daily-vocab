@@ -80,6 +80,9 @@ main{padding:12px 14px 40px;}
 .hidden{display:none;}
 .msg{text-align:center;color:var(--sub);padding:30px;}
 .note{font-size:.72rem;color:var(--sub);margin-bottom:8px;}
+.prompt-ja{font-size:1.18rem;font-weight:700;margin:8px 0 10px;}
+.reveal{width:100%;}
+.answers{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;}
 </style>
 </head>
 <body>
@@ -97,6 +100,7 @@ main{padding:12px 14px 40px;}
     <button data-tab="words" class="active">単語</button>
     <button data-tab="story">物語</button>
     <button data-tab="quiz">クイズ</button>
+    <button data-tab="write">作文</button>
   </div>
 </header>
 <main>
@@ -109,6 +113,7 @@ main{padding:12px 14px 40px;}
     <div id="quizCtrl"></div>
     <div id="quiz"></div>
   </div>
+  <div id="writeWrap" class="hidden"><div id="write"></div></div>
 </main>
 <div class="footer-act">
   <button class="btn" id="ttsAll">🔊 物語を再生</button>
@@ -133,7 +138,7 @@ let wordLang = prog.set.wordLang || 'hi';
 let quizLang = prog.set.quizLang || 'en';
 function save(){ prog.set={wordView,wordLang,quizLang}; try{ localStorage.setItem(PKEY, JSON.stringify(prog)); }catch(e){} }
 
-let VOCAB={}, SCHED={}, PARAS={}, day=1, words=[];
+let VOCAB={}, SCHED={}, PARAS={}, SENT={}, day=1, words=[];
 function qs(n){ return new URLSearchParams(location.search).get(n); }
 function pickVoice(lang){ const vs=speechSynthesis.getVoices()||[]; const p=lang.slice(0,2).toLowerCase();
   return vs.find(v=>v.lang&&v.lang.toLowerCase().replace('_','-').startsWith(p)); }
@@ -154,10 +159,11 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function L(k){ return LANGS.find(x=>x.key===k); }
 
 async function load(){
-  [VOCAB,SCHED,PARAS] = await Promise.all([
+  [VOCAB,SCHED,PARAS,SENT] = await Promise.all([
     fetch('vocab.json').then(r=>r.json()),
     fetch('schedule.json').then(r=>r.json()),
     fetch('paragraphs.json').then(r=>r.json()).catch(()=>({})),
+    fetch('sentences.json').then(r=>r.json()).catch(()=>({})),
   ]);
   day = Math.min(Math.max(parseInt(qs('day'))||1,1), SCHED.day_count);
   render();
@@ -168,7 +174,7 @@ function render(){
   document.getElementById('dayTitle').textContent = 'Day '+day+' / '+SCHED.day_count;
   const p = PARAS[String(day)];
   document.getElementById('themeLabel').textContent = p? p.theme : '';
-  renderWords(); renderStory(); renderQuiz(); updateProg();
+  renderWords(); renderStory(); renderQuiz(); renderWrite(); updateProg();
 }
 function updateProg(){
   const done = words.filter(w=>prog.checked[w.id]).length;
@@ -304,11 +310,35 @@ document.getElementById('quiz').addEventListener('click',e=>{
   setTimeout(()=>{ quizState.i++; nextQuiz(); }, 900);
 });
 
+/* ---------- 作文タブ（日本語→その言語で言う／答えはタップで表示） ---------- */
+function renderWrite(){
+  const c=document.getElementById('write');
+  const items=words.filter(w=>SENT[String(w.id)]);
+  if(!items.length){ c.innerHTML='<div class="msg">この日の作文はまだ準備中です。</div>'; return; }
+  c.innerHTML = `<div class="note">日本語の文を見て、その言語で言ってみよう → 「答えを見る」で正解＆発音（読みなし＝文字で読む練習）。</div>` +
+    items.map(w=>{ const s=SENT[String(w.id)];
+      const ans=LANGS.filter(l=>l.key!=='ja').map(l=> s[l.key]?
+        `<div class="lrow"><span class="llab">${l.label}</span>
+          <span class="lword ${l.cls||''}">${esc(s[l.key])}</span>
+          <button class="spk" data-speak="${esc(s[l.key])}" data-tts="${l.tts}">🔊</button></div>`:'').join('');
+      return `<div class="card">
+        <div class="cardtop"><span class="badge">${w.pos}</span>
+          <span class="en" style="flex:1;cursor:default">${esc(w.en)} <span style="font-weight:400;color:var(--sub);font-size:.85rem">${esc(w.ja)}</span></span></div>
+        <div class="prompt-ja">${esc(s.ja)} <button class="spk" data-speak="${esc(s.ja)}" data-tts="ja-JP">🔊</button></div>
+        <button class="btn reveal">答えを見る</button>
+        <div class="answers hidden">${ans}</div></div>`; }).join('');
+}
+document.getElementById('write').addEventListener('click',e=>{
+  const sp=e.target.closest('[data-speak]'); if(sp){ speak(sp.dataset.speak,sp.dataset.tts); return; }
+  const rv=e.target.closest('.reveal'); if(rv){ const a=rv.nextElementSibling; a.classList.toggle('hidden');
+    rv.textContent=a.classList.contains('hidden')?'答えを見る':'答えを隠す'; }
+});
+
 /* ---------- タブ切替・フッター ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
-  const map={words:'wordsTab',story:'story',quiz:'quizWrap'};
+  const map={words:'wordsTab',story:'story',quiz:'quizWrap',write:'writeWrap'};
   Object.entries(map).forEach(([t,id])=>document.getElementById(id).classList.toggle('hidden',t!==b.dataset.tab));
 }));
 document.getElementById('prevBtn').addEventListener('click',()=>setDay(day-1));

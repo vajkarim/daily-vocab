@@ -1,0 +1,22 @@
+{
+"4":  {"ja":"私は宿題をする。","en":"I do my homework.","hi":"मैं अपना होमवर्क करता हूँ।","zh":"我做作业。","ne":"म मेरो गृहकार्य गर्छु।","idn":"Aku mengerjakan PR.","vi":"Tôi làm bài tập."},
+"15": {"ja":"私は学校へ行く。","en":"I go to school.","hi":"मैं स्कूल जाता हूँ।","zh":"我去学校。","ne":"म विद्यालय जान्छु।","idn":"Aku pergi ke sekolah.","vi":"Tôi đi học."},
+"30": {"ja":"私は鳥を見る。","en":"I see a bird.","hi":"मैं एक चिड़िया देखता हूँ।","zh":"我看见一只鸟。","ne":"म एउटा चरा देख्छु।","idn":"Aku melihat burung.","vi":"Tôi thấy một con chim."},
+"41": {"ja":"私はペンを使う。","en":"I use a pen.","hi":"मैं एक पेन इस्तेमाल करता हूँ।","zh":"我用一支笔。","ne":"म एउटा कलम प्रयोग गर्छु।","idn":"Aku memakai pena.","vi":"Tôi dùng một cây bút."},
+"43": {"ja":"私は公園で走る。","en":"I run in the park.","hi":"मैं पार्क में दौड़ता हूँ।","zh":"我在公园跑步。","ne":"म पार्कमा दौडन्छु।","idn":"Aku berlari di taman.","vi":"Tôi chạy trong công viên."},
+"44": {"ja":"私はご飯を食べる。","en":"I eat rice.","hi":"मैं चावल खाता हूँ।","zh":"我吃饭。","ne":"म भात खान्छु।","idn":"Aku makan nasi.","vi":"Tôi ăn cơm."},
+"50": {"ja":"私は新しい料理を試す。","en":"I try a new dish.","hi":"मैं एक नया व्यंजन आज़माता हूँ।","zh":"我尝试一道新菜。","ne":"म नयाँ परिकार प्रयास गर्छु।","idn":"Aku mencoba masakan baru.","vi":"Tôi thử một món mới."},
+"57": {"ja":"私はプレゼントをもらう。","en":"I get a present.","hi":"मुझे एक तोहफ़ा मिलता है।","zh":"我得到一份礼物。","ne":"मलाई एउटा उपहार मिल्छ।","idn":"Aku mendapat hadiah.","vi":"Tôi nhận một món quà."},
+"63": {"ja":"私は本を机に置く。","en":"I put the book on the desk.","hi":"मैं किताब मेज़ पर रखता हूँ।","zh":"我把书放在桌上。","ne":"म किताब टेबलमा राख्छु।","idn":"Aku menaruh buku di meja.","vi":"Tôi đặt sách lên bàn."},
+"66": {"ja":"私はパンを買う。","en":"I buy bread.","hi":"मैं रोटी खरीदता हूँ।","zh":"我买面包。","ne":"म रोटी किन्छु।","idn":"Aku membeli roti.","vi":"Tôi mua bánh mì."},
+"93": {"ja":"私は椅子に座る。","en":"I sit on the chair.","hi":"मैं कुर्सी पर बैठता हूँ।","zh":"我坐在椅子上。","ne":"म कुर्सीमा बस्छु।","idn":"Aku duduk di kursi.","vi":"Tôi ngồi trên ghế."},
+"112":{"ja":"私は本を読む。","en":"I read a book.","hi":"मैं एक किताब पढ़ता हूँ।","zh":"我读一本书。","ne":"म एउटा किताब पढ्छु।","idn":"Aku membaca buku.","vi":"Tôi đọc một cuốn sách."},
+"115":{"ja":"私は犬が好きだ。","en":"I like dogs.","hi":"मुझे कुत्ते पसंद हैं।","zh":"我喜欢狗。","ne":"मलाई कुकुर मन पर्छ।","idn":"Aku suka anjing.","vi":"Tôi thích chó."},
+"123":{"ja":"私は歌を歌う。","en":"I sing a song.","hi":"मैं एक गाना गाता हूँ।","zh":"我唱一首歌。","ne":"म एउटा गीत गाउँछु।","idn":"Aku menyanyikan lagu.","vi":"Tôi hát một bài hát."},
+"126":{"ja":"私は水が欲しい。","en":"I want water.","hi":"मुझे पानी चाहिए।","zh":"我想要水。","ne":"मलाई पानी चाहियो।","idn":"Aku mau air.","vi":"Tôi muốn nước."},
+"135":{"ja":"私は空を見る。","en":"I look at the sky.","hi":"मैं आसमान देखता हूँ।","zh":"我看天空。","ne":"म आकाश हेर्छु।","idn":"Aku melihat langit.","vi":"Tôi nhìn bầu trời."},
+"139":{"ja":"私は車を持っている。","en":"I have a car.","hi":"मेरे पास एक कार है।","zh":"我有一辆车。","ne":"मसँग एउटा कार छ।","idn":"Aku punya mobil.","vi":"Tôi có một chiếc xe."},
+"140":{"ja":"私は彼を知っている。","en":"I know him.","hi":"मैं उसे जानता हूँ।","zh":"我认识他。","ne":"म उसलाई चिन्छु।","idn":"Aku mengenalnya.","vi":"Tôi biết anh ấy."},
+"143":{"ja":"私はここで止まる。","en":"I stop here.","hi":"मैं यहाँ रुकता हूँ।","zh":"我在这里停下。","ne":"म यहाँ रोकिन्छु।","idn":"Aku berhenti di sini.","vi":"Tôi dừng ở đây."},
+"146":{"ja":"私は友達に会う。","en":"I meet my friend.","hi":"मैं अपने दोस्त से मिलता हूँ।","zh":"我见我的朋友。","ne":"म मेरो साथीलाई भेट्छु।","idn":"Aku bertemu temanku.","vi":"Tôi gặp bạn tôi."}
+}

@@ -131,8 +131,14 @@ function save(){ prog.set={wordView,wordLang,quizLang}; try{ localStorage.setIte
 
 let VOCAB={}, SCHED={}, PARAS={}, day=1, words=[];
 function qs(n){ return new URLSearchParams(location.search).get(n); }
+function pickVoice(lang){ const vs=speechSynthesis.getVoices()||[]; const p=lang.slice(0,2).toLowerCase();
+  return vs.find(v=>v.lang&&v.lang.toLowerCase().replace('_','-').startsWith(p)); }
 function speak(text, lang){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; speechSynthesis.speak(u); }
+  let use=lang;
+  if(!pickVoice(lang) && lang.toLowerCase().startsWith('ne')) use='hi-IN'; // ネパール語音声が無ければヒンディー音声で代読（同じデーヴァナーガリー）
+  const u=new SpeechSynthesisUtterance(text); u.lang=use; u.rate=.9;
+  const v=pickVoice(use); if(v) u.voice=v;
+  speechSynthesis.speak(u); }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function L(k){ return LANGS.find(x=>x.key===k); }
 

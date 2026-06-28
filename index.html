@@ -30,21 +30,33 @@ header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px s
   border-radius:20px;padding:8px;font-size:.85rem;font-weight:700;cursor:pointer;}
 .tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 main{padding:12px 14px 40px;}
+.viewbar{display:flex;gap:6px;margin-bottom:10px;}
+.vbtn{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--sub);
+  border-radius:18px;padding:7px;font-size:.82rem;font-weight:700;cursor:pointer;}
+.vbtn.active{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+.lchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.lchip{border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  border-radius:16px;padding:5px 11px;font-size:.78rem;cursor:pointer;}
+.lchip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
   padding:12px;margin-bottom:10px;}
 .card.done{background:var(--okbg);}
 .cardtop{display:flex;align-items:center;gap:8px;}
-.en{font-weight:800;font-size:1.15rem;flex:1;}
+.en{font-weight:800;font-size:1.15rem;flex:1;cursor:pointer;}
 .badge{font-size:.62rem;padding:2px 6px;border-radius:5px;background:#ece6f1;color:#6a4f8a;font-weight:700;}
 .lv5{background:#e3efe9;color:var(--ok);} .lv4{background:#f3e4d4;color:var(--accent);}
 .iconbtn{border:none;background:transparent;font-size:1.25rem;cursor:pointer;line-height:1;padding:4px;}
-.chk{width:24px;height:24px;accent-color:var(--accent2);}
+.chk{width:24px;height:24px;accent-color:var(--accent2);flex-shrink:0;}
 .langs{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px;}
 .lrow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:.95rem;}
 .llab{font-size:.62rem;color:var(--sub);width:64px;flex-shrink:0;}
 .lword{flex:1;}
 .lread{color:var(--sub);font-size:.78rem;margin-left:4px;}
 .spk{border:none;background:transparent;font-size:1rem;cursor:pointer;padding:2px 6px;color:var(--accent2);}
+.langrow{display:flex;align-items:center;gap:10px;}
+.langrow .col{flex:1;min-width:0;}
+.langrow .lword2{font-size:1.12rem;font-weight:700;}
+.langrow .jp{color:var(--sub);font-size:.82rem;margin-top:2px;}
 .story-lang{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:10px;}
 .story-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .story-head b{font-size:.85rem;}
@@ -63,6 +75,7 @@ main{padding:12px 14px 40px;}
 .quiz-score{text-align:center;color:var(--sub);font-size:.85rem;margin-bottom:8px;}
 .hidden{display:none;}
 .msg{text-align:center;color:var(--sub);padding:30px;}
+.note{font-size:.72rem;color:var(--sub);margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -83,9 +96,15 @@ main{padding:12px 14px 40px;}
   </div>
 </header>
 <main>
-  <div id="words"></div>
+  <div id="wordsTab">
+    <div id="wordsCtrl"></div>
+    <div id="words"></div>
+  </div>
   <div id="story" class="hidden"></div>
-  <div id="quiz" class="hidden"></div>
+  <div id="quizWrap" class="hidden">
+    <div id="quizCtrl"></div>
+    <div id="quiz"></div>
+  </div>
 </main>
 <div class="footer-act">
   <button class="btn" id="ttsAll">🔊 物語を再生</button>
@@ -104,18 +123,18 @@ const LANGS = [
 ];
 const PKEY = 'daily20_progress_v1';
 let prog = {}; try{ prog = JSON.parse(localStorage.getItem(PKEY))||{}; }catch(e){}
-if(!prog.checked) prog.checked={}; if(!prog.flagged) prog.flagged={};
-function save(){ try{ localStorage.setItem(PKEY, JSON.stringify(prog)); }catch(e){} }
+if(!prog.checked) prog.checked={}; if(!prog.flagged) prog.flagged={}; if(!prog.set) prog.set={};
+let wordView = prog.set.wordView || 'byword';   // 'byword' | 'bylang'
+let wordLang = prog.set.wordLang || 'hi';
+let quizLang = prog.set.quizLang || 'en';
+function save(){ prog.set={wordView,wordLang,quizLang}; try{ localStorage.setItem(PKEY, JSON.stringify(prog)); }catch(e){} }
 
 let VOCAB={}, SCHED={}, PARAS={}, day=1, words=[];
-
-function qs(n){ const m=new URLSearchParams(location.search); return m.get(n); }
-function speak(text, lang){
-  if(!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; speechSynthesis.speak(u);
-}
+function qs(n){ return new URLSearchParams(location.search).get(n); }
+function speak(text, lang){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang=lang; u.rate=.9; speechSynthesis.speak(u); }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function L(k){ return LANGS.find(x=>x.key===k); }
 
 async function load(){
   [VOCAB,SCHED,PARAS] = await Promise.all([
@@ -126,11 +145,7 @@ async function load(){
   day = Math.min(Math.max(parseInt(qs('day'))||1,1), SCHED.day_count);
   render();
 }
-function setDay(d){
-  day = Math.min(Math.max(d,1), SCHED.day_count);
-  history.replaceState(null,'','?day='+day);
-  render();
-}
+function setDay(d){ day=Math.min(Math.max(d,1),SCHED.day_count); history.replaceState(null,'','?day='+day); render(); }
 function render(){
   words = (SCHED.days[String(day)]||[]).map(id=>({id, ...VOCAB[String(id)]}));
   document.getElementById('dayTitle').textContent = 'Day '+day+' / '+SCHED.day_count;
@@ -142,105 +157,147 @@ function updateProg(){
   const done = words.filter(w=>prog.checked[w.id]).length;
   document.getElementById('prog').innerHTML = `今日のチェック <b>${done}</b> / ${words.length}　｜　⭐苦手 ${words.filter(w=>prog.flagged[w.id]).length}`;
 }
+
+/* ---------- 単語タブ ---------- */
 function renderWords(){
-  const c=document.getElementById('words'); c.innerHTML='';
-  words.forEach(w=>{
-    const div=document.createElement('div');
-    div.className='card'+(prog.checked[w.id]?' done':'');
-    let h=`<div class="cardtop">
-      <span class="en">${esc(w.en)}</span>
+  // コントロール（表示切替）
+  let ctrl = `<div class="viewbar">
+    <button class="vbtn ${wordView==='byword'?'active':''}" data-v="byword">単語ごと（全言語）</button>
+    <button class="vbtn ${wordView==='bylang'?'active':''}" data-v="bylang">言語ごと</button></div>`;
+  if(wordView==='bylang'){
+    ctrl += `<div class="lchips" id="wlchips">` +
+      LANGS.filter(l=>l.key!=='ja').map(l=>`<button class="lchip ${l.key===wordLang?'active':''}" data-k="${l.key}">${l.label}</button>`).join('') +
+      `</div><div class="note">選んだ言語だけ表示（日本語訳つき）。タップで発音。</div>`;
+  }
+  document.getElementById('wordsCtrl').innerHTML = ctrl;
+
+  const c=document.getElementById('words');
+  if(wordView==='byword'){
+    c.innerHTML = words.map(cardHTML).join('');
+  } else {
+    const l=L(wordLang);
+    c.innerHTML = words.map(w=>langRowHTML(w,l)).join('');
+  }
+}
+function cardHTML(w){
+  let h=`<div class="card ${prog.checked[w.id]?'done':''}" data-id="${w.id}">
+    <div class="cardtop">
+      <span class="en" data-speak="${esc(w.en)}" data-tts="en-US">${esc(w.en)}</span>
       <span class="badge ${w.level==='5級'?'lv5':'lv4'}">${w.level}</span>
       <span class="badge">${w.pos}</span>
-      <button class="iconbtn flag" title="苦手">${prog.flagged[w.id]?'⭐':'☆'}</button>
+      <button class="iconbtn flag">${prog.flagged[w.id]?'⭐':'☆'}</button>
       <input type="checkbox" class="chk" ${prog.checked[w.id]?'checked':''}>
     </div><div class="langs">`;
-    LANGS.forEach(l=>{
-      if(l.key==='en') return;
-      const word=esc(w[l.key]||''); const read=l.r?esc(w[l.r]||''):'';
-      h+=`<div class="lrow">
-        <span class="llab">${l.label}</span>
-        <span class="lword ${l.cls||''}">${word}${read?`<span class="lread">${read}</span>`:''}</span>
-        <button class="spk" data-tts="${l.tts}" data-text="${word}">🔊</button>
-      </div>`;
-    });
-    h+='</div>';
-    div.innerHTML=h;
-    div.querySelector('.chk').addEventListener('change',e=>{ prog.checked[w.id]=e.target.checked; save(); div.classList.toggle('done',e.target.checked); updateProg();});
-    div.querySelector('.flag').addEventListener('click',e=>{ prog.flagged[w.id]=!prog.flagged[w.id]; save(); e.target.textContent=prog.flagged[w.id]?'⭐':'☆'; updateProg();});
-    div.querySelectorAll('.spk').forEach(b=>b.addEventListener('click',()=>speak(b.dataset.text,b.dataset.tts)));
-    // tap English to hear
-    const enEl=div.querySelector('.en'); enEl.style.cursor='pointer';
-    enEl.addEventListener('click',()=>speak(w.en,'en-US'));
-    c.appendChild(div);
+  LANGS.forEach(l=>{ if(l.key==='en') return;
+    const word=esc(w[l.key]||''); const read=l.r?esc(w[l.r]||''):'';
+    h+=`<div class="lrow"><span class="llab">${l.label}</span>
+      <span class="lword ${l.cls||''}">${word}${read?`<span class="lread">${read}</span>`:''}</span>
+      <button class="spk" data-speak="${word}" data-tts="${l.tts}">🔊</button></div>`;
   });
+  return h+'</div>';
 }
+function langRowHTML(w,l){
+  const word=esc(w[l.key]||''); const read=l.r?esc(w[l.r]||''):'';
+  return `<div class="card langrow ${prog.checked[w.id]?'done':''}" data-id="${w.id}">
+    <input type="checkbox" class="chk" ${prog.checked[w.id]?'checked':''}>
+    <div class="col">
+      <div class="lword2 ${l.cls||''}" data-speak="${word}" data-tts="${l.tts}">${word}${read?`<span class="lread">${read}</span>`:''}</div>
+      <div class="jp">${esc(w.ja)}　<span class="badge ${w.level==='5級'?'lv5':'lv4'}">${w.level}</span> <span class="badge">${w.pos}</span></div>
+    </div>
+    <button class="spk" data-speak="${word}" data-tts="${l.tts}">🔊</button>
+    <button class="iconbtn flag">${prog.flagged[w.id]?'⭐':'☆'}</button>
+  </div>`;
+}
+// イベント委任（単語）
+document.getElementById('wordsCtrl').addEventListener('click',e=>{
+  const v=e.target.closest('.vbtn'); if(v){ wordView=v.dataset.v; save(); renderWords(); return; }
+  const k=e.target.closest('.lchip'); if(k){ wordLang=k.dataset.k; save(); renderWords(); }
+});
+document.getElementById('words').addEventListener('click',e=>{
+  const sp=e.target.closest('[data-speak]'); if(sp){ speak(sp.dataset.speak, sp.dataset.tts); return; }
+  const fl=e.target.closest('.flag'); if(fl){ const id=fl.closest('[data-id]').dataset.id;
+    prog.flagged[id]=!prog.flagged[id]; save(); fl.textContent=prog.flagged[id]?'⭐':'☆'; updateProg(); return; }
+});
+document.getElementById('words').addEventListener('change',e=>{
+  if(!e.target.classList.contains('chk')) return;
+  const card=e.target.closest('[data-id]'); const id=card.dataset.id;
+  prog.checked[id]=e.target.checked; save(); card.classList.toggle('done',e.target.checked); updateProg();
+});
+
+/* ---------- 物語タブ ---------- */
 function renderStory(){
   const c=document.getElementById('story'); const p=PARAS[String(day)];
   if(!p){ c.innerHTML='<div class="msg">この日の物語はまだ準備中です。</div>'; return; }
-  c.innerHTML='';
-  LANGS.forEach(l=>{
-    const txt=p[l.key]; if(!txt) return;
-    const d=document.createElement('div'); d.className='story-lang';
-    d.innerHTML=`<div class="story-head"><b>${l.label}</b><button class="spk" data-tts="${l.tts}">🔊 再生</button></div>
-      <div class="story-body ${l.cls||''}">${esc(txt)}</div>`;
-    d.querySelector('.spk').addEventListener('click',()=>speak(txt,l.tts));
-    c.appendChild(d);
-  });
+  c.innerHTML = LANGS.map(l=>{ const txt=p[l.key]; if(!txt) return '';
+    return `<div class="story-lang"><div class="story-head"><b>${l.label}</b>
+      <button class="spk" data-speak="${esc(txt)}" data-tts="${l.tts}">🔊 再生</button></div>
+      <div class="story-body ${l.cls||''}">${esc(txt)}</div></div>`; }).join('');
 }
-// ---- Quiz ----
+document.getElementById('story').addEventListener('click',e=>{
+  const sp=e.target.closest('[data-speak]'); if(sp) speak(sp.dataset.speak, sp.dataset.tts);
+});
+
+/* ---------- クイズタブ（出題言語を選択可） ---------- */
 let quizState=null;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function renderQuiz(){
-  const c=document.getElementById('quiz');
-  c.innerHTML=`<div class="quiz-score" id="qscore"></div><div id="qbody"></div>`;
+  document.getElementById('quizCtrl').innerHTML =
+    `<div class="note">出題する言語を選ぶ → その言語の単語の意味（日本語）を当てる</div><div class="lchips" id="qlchips">`+
+    LANGS.filter(l=>l.key!=='ja').map(l=>`<button class="lchip ${l.key===quizLang?'active':''}" data-k="${l.key}">${l.label}</button>`).join('')+
+    `</div>`;
+  document.getElementById('quiz').innerHTML=`<div class="quiz-score" id="qscore"></div><div id="qbody"></div>`;
   quizState={i:0,correct:0,order:shuffle([...words])};
   nextQuiz();
 }
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function nextQuiz(){
   const body=document.getElementById('qbody'); const sc=document.getElementById('qscore');
+  const l=L(quizLang);
   if(!quizState.order.length){ body.innerHTML='<div class="msg">今日の単語がありません。</div>'; return; }
   if(quizState.i>=quizState.order.length){
     body.innerHTML=`<div class="quiz-q"><div>クイズ終了！</div><div class="quiz-word">${quizState.correct} / ${quizState.order.length}</div><button class="btn primary" id="qagain">もう一回</button></div>`;
-    document.getElementById('qagain').addEventListener('click',renderQuiz); sc.textContent=''; return;
+    document.getElementById('qagain').onclick=renderQuiz; sc.textContent=''; return;
   }
-  sc.textContent=`第 ${quizState.i+1} 問 / ${quizState.order.length}　正解 ${quizState.correct}`;
+  sc.textContent=`第 ${quizState.i+1} 問 / ${quizState.order.length}　正解 ${quizState.correct}（${l.label}）`;
   const w=quizState.order[quizState.i];
-  // prompt = English word (+TTS); options = Japanese meanings
+  const word=esc(w[quizLang]||w.en); const read=l.r?esc(w[l.r]||''):'';
   const wrong=shuffle(words.filter(x=>x.id!==w.id)).slice(0,3);
   const opts=shuffle([w,...wrong]);
   let h=`<div class="quiz-q"><div style="font-size:.8rem;color:var(--sub)">意味は？</div>
-    <div class="quiz-word">${esc(w.en)} <button class="spk" data-tts="en-US">🔊</button></div></div>`;
+    <div class="quiz-word ${l.cls||''}">${word}${read?`<span class="lread">${read}</span>`:''} <button class="spk" data-speak="${word}" data-tts="${l.tts}">🔊</button></div></div>`;
   opts.forEach(o=>{ h+=`<button class="quiz-opt" data-id="${o.id}">${esc(o.ja)}</button>`; });
   body.innerHTML=h;
-  body.querySelector('.spk').addEventListener('click',()=>speak(w.en,'en-US'));
-  body.querySelectorAll('.quiz-opt').forEach(b=>b.addEventListener('click',()=>{
-    const ok = String(b.dataset.id)===String(w.id);
-    if(ok){ b.classList.add('correct'); quizState.correct++; }
-    else { b.classList.add('wrong'); body.querySelector(`[data-id="${w.id}"]`).classList.add('correct'); }
-    body.querySelectorAll('.quiz-opt').forEach(x=>x.disabled=true);
-    setTimeout(()=>{ quizState.i++; nextQuiz(); }, 900);
-  }));
 }
-// ---- tabs ----
+document.getElementById('quizCtrl').addEventListener('click',e=>{
+  const k=e.target.closest('.lchip'); if(k){ quizLang=k.dataset.k; save(); renderQuiz(); }
+});
+document.getElementById('quiz').addEventListener('click',e=>{
+  const sp=e.target.closest('[data-speak]'); if(sp){ speak(sp.dataset.speak, sp.dataset.tts); return; }
+  const opt=e.target.closest('.quiz-opt'); if(!opt||opt.disabled) return;
+  const w=quizState.order[quizState.i];
+  const ok=String(opt.dataset.id)===String(w.id);
+  if(ok){ opt.classList.add('correct'); quizState.correct++; }
+  else { opt.classList.add('wrong'); const c=document.querySelector(`.quiz-opt[data-id="${w.id}"]`); if(c)c.classList.add('correct'); }
+  document.querySelectorAll('.quiz-opt').forEach(x=>x.disabled=true);
+  setTimeout(()=>{ quizState.i++; nextQuiz(); }, 900);
+});
+
+/* ---------- タブ切替・フッター ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
-  ['words','story','quiz'].forEach(t=>document.getElementById(t).classList.toggle('hidden',t!==b.dataset.tab));
+  const map={words:'wordsTab',story:'story',quiz:'quizWrap'};
+  Object.entries(map).forEach(([t,id])=>document.getElementById(id).classList.toggle('hidden',t!==b.dataset.tab));
 }));
 document.getElementById('prevBtn').addEventListener('click',()=>setDay(day-1));
 document.getElementById('nextBtn').addEventListener('click',()=>setDay(day+1));
-document.getElementById('ttsAll').addEventListener('click',()=>{
-  const p=PARAS[String(day)]; if(p&&p.ja) speak(p.ja,'ja-JP');
-});
+document.getElementById('ttsAll').addEventListener('click',()=>{ const p=PARAS[String(day)]; if(p&&p.ja) speak(p.ja,'ja-JP'); });
 document.getElementById('ankiExport').addEventListener('click',()=>{
   const flagged=Object.keys(prog.flagged).filter(id=>prog.flagged[id]);
   if(!flagged.length){ alert('苦手フラグ（⭐）を付けた単語がありません。'); return; }
   let tsv='#separator:tab\n#html:false\n#columns:English\tJapanese\tHindi\tChinese\tNepali\tBahasa\tVietnamese\n';
-  flagged.forEach(id=>{ const v=VOCAB[id]; if(!v) return;
-    tsv+=[v.en,v.ja,v.hi,v.zh,v.ne,v.idn,v.vi].join('\t')+'\n'; });
+  flagged.forEach(id=>{ const v=VOCAB[id]; if(!v) return; tsv+=[v.en,v.ja,v.hi,v.zh,v.ne,v.idn,v.vi].join('\t')+'\n'; });
   const blob=new Blob([tsv],{type:'text/tab-separated-values'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='苦手単語_anki.tsv'; a.click();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='苦手単語_anki.tsv'; a.click();
 });
 load();
 </script>

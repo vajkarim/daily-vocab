@@ -60,7 +60,11 @@ main{padding:12px 14px 40px;}
 .story-lang{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:10px;}
 .story-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .story-head b{font-size:.85rem;}
-.story-body{font-size:1.02rem;line-height:1.7;}
+.story-body{font-size:1.02rem;line-height:1.9;}
+.sent{cursor:pointer;border-radius:5px;padding:0 2px;transition:background .12s;}
+.sent:active{background:#f0e9d8;}
+.sent.playing{background:var(--gold);color:#fff;}
+.story-head .spk{font-size:.8rem;border:1px solid var(--line);border-radius:14px;padding:4px 11px;color:var(--accent2);margin-left:6px;}
 .btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:20px;
   padding:10px 16px;font-size:.9rem;cursor:pointer;}
 .btn.primary{background:var(--accent2);border-color:var(--accent2);color:#fff;}
@@ -133,12 +137,19 @@ let VOCAB={}, SCHED={}, PARAS={}, day=1, words=[];
 function qs(n){ return new URLSearchParams(location.search).get(n); }
 function pickVoice(lang){ const vs=speechSynthesis.getVoices()||[]; const p=lang.slice(0,2).toLowerCase();
   return vs.find(v=>v.lang&&v.lang.toLowerCase().replace('_','-').startsWith(p)); }
-function speak(text, lang){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel();
-  let use=lang;
-  if(!pickVoice(lang) && lang.toLowerCase().startsWith('ne')) use='hi-IN'; // ネパール語音声が無ければヒンディー音声で代読（同じデーヴァナーガリー）
+function ttsUtter(text, lang){ let use=lang;
+  if(!pickVoice(lang) && lang.toLowerCase().startsWith('ne')) use='hi-IN'; // ネパール語音声が無ければヒンディー音声で代読
   const u=new SpeechSynthesisUtterance(text); u.lang=use; u.rate=.9;
-  const v=pickVoice(use); if(v) u.voice=v;
-  speechSynthesis.speak(u); }
+  const v=pickVoice(use); if(v) u.voice=v; return u; }
+function speak(text, lang){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); speechSynthesis.speak(ttsUtter(text,lang)); }
+function splitSentences(text){ const re=/[^.!?。！？।]+[.!?。！？।]+[”’"'」』）)\]]*\s*|[^.!?。！？।]+$/g;
+  const out=(text.match(re)||[]).map(s=>s.trim()).filter(Boolean); return out.length?out:[text]; }
+function clearHL(){ document.querySelectorAll('.sent.playing').forEach(s=>s.classList.remove('playing')); }
+function playAll(block,tts){ if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); clearHL();
+  const sents=[...block.querySelectorAll('.sent')]; let i=0;
+  (function next(){ if(i>=sents.length) return; const el=sents[i]; clearHL(); el.classList.add('playing');
+    el.scrollIntoView({block:'nearest',behavior:'smooth'});
+    const u=ttsUtter(el.textContent,tts); u.onend=()=>{ el.classList.remove('playing'); i++; next(); }; speechSynthesis.speak(u); })(); }
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function L(k){ return LANGS.find(x=>x.key===k); }
 
@@ -235,12 +246,18 @@ function renderStory(){
   const c=document.getElementById('story'); const p=PARAS[String(day)];
   if(!p){ c.innerHTML='<div class="msg">この日の物語はまだ準備中です。</div>'; return; }
   c.innerHTML = LANGS.map(l=>{ const txt=p[l.key]; if(!txt) return '';
-    return `<div class="story-lang"><div class="story-head"><b>${l.label}</b>
-      <button class="spk" data-speak="${esc(txt)}" data-tts="${l.tts}">🔊 再生</button></div>
-      <div class="story-body ${l.cls||''}">${esc(txt)}</div></div>`; }).join('');
+    const body=splitSentences(txt).map(s=>`<span class="sent">${esc(s)}</span>`).join(' ');
+    return `<div class="story-lang" data-tts="${l.tts}"><div class="story-head"><b>${l.label}</b>
+      <span><button class="spk playall">▶ 全体</button><button class="spk stopbtn">⏹</button></span></div>
+      <div class="story-body ${l.cls||''}">${body}</div>
+      <div class="note">文をタップ＝その文だけ再生／▶全体＝順に再生（再生中の文がハイライト）</div></div>`; }).join('');
 }
 document.getElementById('story').addEventListener('click',e=>{
-  const sp=e.target.closest('[data-speak]'); if(sp) speak(sp.dataset.speak, sp.dataset.tts);
+  const block=e.target.closest('.story-lang'); if(!block) return; const tts=block.dataset.tts;
+  if(e.target.closest('.playall')){ playAll(block,tts); return; }
+  if(e.target.closest('.stopbtn')){ speechSynthesis.cancel(); clearHL(); return; }
+  const sent=e.target.closest('.sent'); if(sent){ speechSynthesis.cancel(); clearHL(); sent.classList.add('playing');
+    const u=ttsUtter(sent.textContent,tts); u.onend=()=>sent.classList.remove('playing'); speechSynthesis.speak(u); }
 });
 
 /* ---------- クイズタブ（出題言語を選択可） ---------- */

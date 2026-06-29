@@ -24,7 +24,14 @@ GMAIL_USER = os.environ['GMAIL_USER']
 GMAIL_PW   = os.environ['GMAIL_APP_PASSWORD']
 TO_EMAIL   = os.environ.get('TO_EMAIL') or GMAIL_USER
 PAGES_URL  = os.environ.get('PAGES_URL', '').rstrip('/')
+# 開始日: config.json を最優先（Variable設定に依存しない）→ 環境変数 → 失敗時Day1
 START_DATE = os.environ.get('START_DATE', '')
+try:
+    cfg = json.load(io.open(os.path.join(BASE, 'config.json'), encoding='utf-8'))
+    if cfg.get('start_date'):
+        START_DATE = cfg['start_date']
+except Exception:
+    pass
 
 # Day番号を算出（JST基準）
 jst = datetime.timezone(datetime.timedelta(hours=9))
